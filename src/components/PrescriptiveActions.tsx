@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSimulation } from '../context/SimulationContext';
 import { prescriptiveOptimizer } from '../utils/optimizer';
-import { Brain, Zap, TrendingUp, CheckCircle, Target, DollarSign, Clock, Users } from 'lucide-react';
+import { Brain, Zap, TrendingUp, CheckCircle, Target, DollarSign, Clock, Users, AlertTriangle } from 'lucide-react';
 
 interface Recommendation {
   id: string;
@@ -13,6 +13,8 @@ interface Recommendation {
   priority: 'high' | 'medium' | 'low';
   category: string;
   timestamp: Date;
+  details: string[];
+  impact: string;
 }
 
 export function PrescriptiveActions() {
@@ -47,19 +49,21 @@ export function PrescriptiveActions() {
       const newRecommendation: Recommendation = {
         id: `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         eventId: event.id,
-        action: results.action || `Optimize ${optimizationObjective.replace('_', ' ')} for ${event.type}`,
-        estimatedCost: results.estimatedCost || Math.floor(Math.random() * maxBudget * 0.3),
-        estimatedTime: results.estimatedTime || Math.floor(Math.random() * 24) + 1,
+        action: results.action,
+        estimatedCost: results.estimatedCost,
+        estimatedTime: results.estimatedTime,
         confidence: event.confidence * 100,
-        priority: event.confidence > 0.9 ? 'high' : event.confidence > 0.7 ? 'medium' : 'low',
-        category: event.type || 'General',
+        priority: results.priority,
+        category: results.category,
         timestamp: new Date(),
+        details: results.details,
+        impact: event.impact || 'Medium'
       };
 
       // Only add if confidence meets threshold and not duplicate
       if (newRecommendation.confidence >= confidenceThreshold) {
         setRecommendations(prev => {
-          // Remove old recommendations for same event type to prevent duplicates
+          // Remove old recommendations for same event to prevent duplicates
           const filtered = prev.filter(rec => rec.eventId !== event.id);
           return [...filtered, newRecommendation];
         });
@@ -194,7 +198,7 @@ export function PrescriptiveActions() {
           <span>{isOptimizing ? "Generating..." : "Generate New Recommendations"}</span>
         </button>
         {!state.activeEvent && (
-          <p className="text-sm text-gray-500 mt-2">No active event to analyze</p>
+          <p className="text-sm text-gray-500 mt-2">Trigger an event in the simulator to generate recommendations</p>
         )}
       </div>
 
@@ -202,14 +206,14 @@ export function PrescriptiveActions() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-700 flex items-center">
           <TrendingUp className="mr-2" size={20} />
-          Recommendations ({recommendations.length})
+          AI Recommendations ({recommendations.length})
         </h3>
 
         {recommendations.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Brain className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>No recommendations generated yet.</p>
-            <p className="text-sm">Trigger an event or lower the confidence threshold to see suggestions.</p>
+            <p className="text-sm">Trigger an event to see AI-powered prescriptive actions.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -242,12 +246,25 @@ export function PrescriptiveActions() {
                           <span className="font-medium">Confidence:</span> {rec.confidence.toFixed(1)}%
                         </div>
                         <div>
-                          <span className="font-medium">Category:</span> {rec.category}
+                          <span className="font-medium">Impact:</span> {rec.impact}
                         </div>
                       </div>
 
+                      {/* Action Details */}
+                      <div className="mb-3">
+                        <h5 className="text-sm font-medium text-gray-700 mb-1">Recommended Actions:</h5>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          {rec.details.map((detail, idx) => (
+                            <li key={idx} className="flex items-start space-x-2">
+                              <span className="text-blue-500 mt-1">•</span>
+                              <span>{detail}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
                       <p className="text-xs text-gray-500">
-                        Generated: {rec.timestamp.toLocaleString()}
+                        Generated: {rec.timestamp.toLocaleString()} | Category: {rec.category}
                       </p>
                     </div>
 

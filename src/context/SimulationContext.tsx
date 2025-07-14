@@ -22,6 +22,9 @@ export interface Event {
   description: string;
   timestamp: Date;
   confidence: number;
+  intensity?: number;
+  location?: string;
+  impact?: string;
 }
 
 interface SimulationState {
